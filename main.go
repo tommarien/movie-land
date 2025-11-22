@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tommarien/movie-land/internal/config"
-	"github.com/tommarien/movie-land/internal/database"
+	"github.com/tommarien/movie-land/internal/datastore"
 )
 
 func main() {
@@ -27,25 +27,20 @@ func main() {
 	}
 	defer dbpool.Close()
 
-	db := database.New(dbpool)
+	ds := datastore.New(dbpool)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*50)
 	defer cancel()
 
-	err = db.Connect(ctx)
+	err = ds.Connect(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Successfully connected to the database")
 
-	// err = db.InsertGenre(context.Background(), &database.Genre{Slug: "drama", Name: "Drama"})
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	genre, err := db.GetGenre(context.Background(), 1)
+	genre, err := ds.GetGenre(context.Background(), 1)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("err: %#v", err)
 	}
 
 	fmt.Printf("Genre: %+v\n", genre)

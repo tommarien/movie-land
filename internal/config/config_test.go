@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/google/go-cmp/cmp"
 	"github.com/tommarien/movie-land/internal/config"
 )
 
@@ -16,15 +16,15 @@ func TestConfig(t *testing.T) {
 	tests := []struct {
 		name    string
 		envVars map[string]string
-		want    *config.Config
+		wantCfg *config.Config
 		wantErr string
 	}{
 		{
-			name: "return a config",
+			name: "return a config with the DATABASE_URL env var",
 			envVars: map[string]string{
 				"DATABASE_URL": "postgres://user:pass@localhost:5432/video-land",
 			},
-			want: &config.Config{
+			wantCfg: &config.Config{
 				DatabaseUrl: "postgres://user:pass@localhost:5432/video-land",
 			},
 		},
@@ -49,12 +49,24 @@ func TestConfig(t *testing.T) {
 
 			cfg, err := config.FromEnv()
 			if tt.wantErr != "" {
-				assert.EqualError(t, err, fmt.Sprintf("env: %s", tt.wantErr))
+				if err == nil {
+					t.Fatalf("expected error but got nil")
+				}
+
+				if want := fmt.Sprintf("env: %s", tt.wantErr); err.Error() != want {
+					t.Fatalf("expected error %q but got %q", want, err.Error())
+				}
+
 				return
 			}
 
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, cfg)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if diff := cmp.Diff(tt.wantCfg, cfg); diff != "" {
+				t.Fatalf("config mismatch (-want +got):\n%s", diff)
+			}
 		})
 	}
 }

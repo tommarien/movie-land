@@ -1,4 +1,4 @@
-package database
+package datastore
 
 import (
 	"context"
@@ -11,16 +11,16 @@ import (
 
 const uniqueConstraintViolationCode = "23505"
 
-type Database struct {
+type Store struct {
 	pool *pgxpool.Pool
 }
 
-func New(pool *pgxpool.Pool) *Database {
-	return &Database{pool: pool}
+func New(pool *pgxpool.Pool) *Store {
+	return &Store{pool: pool}
 }
 
-func (db *Database) Connect(ctx context.Context) error {
-	if err := db.pool.Ping(ctx); err != nil {
+func (ds *Store) Connect(ctx context.Context) error {
+	if err := ds.pool.Ping(ctx); err != nil {
 		return fmt.Errorf("database: connect: %w", err)
 	}
 	return nil
