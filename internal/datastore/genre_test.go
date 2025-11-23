@@ -30,15 +30,22 @@ func connect(t *testing.T) *pgxpool.Pool {
 	return dbpool
 }
 
-func createGenre(t *testing.T, dbpool *pgxpool.Pool) int {
+func storeGenre(t *testing.T, dbpool *pgxpool.Pool, genre *datastore.Genre) int {
 	t.Helper()
+
+	if genre == nil {
+		genre = &datastore.Genre{
+			Slug: "drama",
+			Name: sql.NullString{String: "Drama", Valid: true},
+		}
+	}
 
 	var id int
 
 	err := dbpool.QueryRow(
 		context.Background(),
 		`INSERT INTO genres (slug, name) VALUES ($1, $2) RETURNING id`,
-		"drama", "Drama",
+		genre.Slug, genre.Name,
 	).Scan(&id)
 	if err != nil {
 		t.Fatalf("failed to insert genre: %v", err)
@@ -70,7 +77,7 @@ func TestGetGenre(t *testing.T) {
 	})
 
 	t.Run("returns the genre if it exists", func(t *testing.T) {
-		genreId := createGenre(t, pool)
+		genreId := storeGenre(t, pool, nil)
 
 		genre, err := ds.GetGenre(context.Background(), genreId)
 		if err != nil {
@@ -131,7 +138,7 @@ func TestInsertGenre(t *testing.T) {
 	})
 
 	t.Run("returns error when inserting duplicate slug", func(t *testing.T) {
-		createGenre(t, pool)
+		storeGenre(t, pool, nil)
 
 		genre1 := &datastore.Genre{
 			Slug: "drama",
@@ -142,4 +149,78 @@ func TestInsertGenre(t *testing.T) {
 			t.Fatalf("expected ErrGenreSlugExists, got %v", err)
 		}
 	})
+
+	t.Run("returns error when inserting nil genre", func(t *testing.T) {
+		err := ds.InsertGenre(context.Background(), nil)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+
+		if want := "datastore: InsertGenre: genre is nil"; err.Error() != want {
+			t.Fatalf("expected error message %q, got %q", want, err.Error())
+		}
+	})
+}
+
+func TestUpdateGenre(t *testing.T) {
+	pool := connect(t)
+	ds := datastore.New(pool)
+
+	t.Run("updates an existing genre", func(t *testing.T) {
+		genreId := storeGenre(t, pool, nil)
+
+		genre, err := ds.GetGenre(context.Background(), genreId)
+		if err != nil {
+			t.Fatalf("failed to get genre: %v", err)
+		}
+
+		genre.Name = sql.NullString{String: "Updated Drama", Valid: true}
+
+		err = ds.UpdateGenre(context.Background(), genre)
+		if err != nil {
+			t.Fatalf("failed to update genre: %v", err)
+		}
+
+		updatedGenre, err := ds.GetGenre(context.Background(), genreId)
+		if err != nil {
+			t.Fatalf("failed to get updated genre: %v", err)
+		}
+
+		if updatedGenre.Name.String != "Updated Drama" {
+			t.Errorf("expected updated genre name to be 'Updated Drama', got %s",
+				updatedGenre.Name.String)
+		}
+	})
+
+	t.Run("returns error when updating to duplicate slug", func(t *testing.T) {
+		dramaId := storeGenre(t, pool, nil)
+		_ = storeGenre(t, pool, &datastore.Genre{
+			Slug: "comedy",
+			Name: sql.NullString{String: "Comedy", Valid: true},
+		})
+
+		drama, err := ds.GetGenre(context.Background(), dramaId)
+		if err != nil {
+			t.Fatalf("failed to get drama genre: %v", err)
+		}
+
+		drama.Slug = "comedy"
+
+		err = ds.UpdateGenre(context.Background(), drama)
+		if !errors.Is(err, datastore.ErrGenreSlugExists) {
+			t.Fatalf("expected ErrGenreSlugExists, got %v", err)
+		}
+	})
+
+	t.Run("returns error when updating nil genre", func(t *testing.T) {
+		err := ds.UpdateGenre(context.Background(), nil)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+
+		if want := "datastore: UpdateGenre: genre is nil"; err.Error() != want {
+			t.Fatalf("expected error message %q, got %q", want, err.Error())
+		}
+	})
+
 }
