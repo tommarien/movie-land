@@ -4,6 +4,7 @@ import "github.com/caarlos0/env/v11"
 
 type Config struct {
 	DatabaseUrl string `env:"DATABASE_URL,notEmpty"`
+	Port        int    `env:"PORT" envDefault:"3000"`
 }
 
 func FromEnv() (*Config, error) {

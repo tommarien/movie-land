@@ -26,6 +26,17 @@ func TestConfig(t *testing.T) {
 			},
 			wantCfg: &config.Config{
 				DatabaseUrl: "postgres://user:pass@localhost:5432/video-land",
+				Port:        3000,
+			},
+		},
+		{
+			name: "return a config with the PORT env var if set",
+			envVars: map[string]string{
+				"PORT": "4004",
+			},
+			wantCfg: &config.Config{
+				DatabaseUrl: "postgres://user:pass@localhost:5432/movie-land",
+				Port:        4004,
 			},
 		},
 		{

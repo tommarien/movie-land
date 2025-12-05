@@ -1,47 +1,63 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"log"
-	"time"
+	"log/slog"
+	"os"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	// "github.com/jackc/pgx/v5/pgxpool"
+	"github.com/tommarien/movie-land/internal/api"
 	"github.com/tommarien/movie-land/internal/config"
-	"github.com/tommarien/movie-land/internal/datastore"
+	// "github.com/tommarien/movie-land/internal/datastore"
 )
 
 func main() {
-	fmt.Println("Welcome to Movieland")
+	if err := run(); err != nil {
+		slog.Error("main: uncaught error", "error", err)
+		os.Exit(1)
+	}
+}
 
+func run() error {
 	cfg, err := config.FromEnv()
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to parse envvars: %w", err)
 	}
 
-	fmt.Printf("cfg: %+v\n", cfg)
+	api := api.New(cfg)
 
-	dbpool, err := pgxpool.New(context.Background(), cfg.DatabaseUrl)
+	err = api.Start()
 	if err != nil {
-		log.Fatal(err)
-	}
-	defer dbpool.Close()
-
-	ds := datastore.New(dbpool)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*50)
-	defer cancel()
-
-	err = ds.Connect(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Successfully connected to the database")
-
-	genre, err := ds.GetGenre(context.Background(), 1)
-	if err != nil {
-		log.Fatalf("err: %#v", err)
+		return fmt.Errorf("failed to start api: %w", err)
 	}
 
-	fmt.Printf("Genre: %+v\n", genre)
+	return nil
+
+	// dbpool, err := pgxpool.New(context.Background(), cfg.DatabaseUrl)
+	// if err != nil {
+	// 	return err
+	// }
+	//
+	// defer dbpool.Close()
+	//
+	// ds := datastore.New(dbpool)
+	//
+	// ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*50)
+	// defer cancel()
+	//
+	// err = ds.Connect(ctx)
+	// if err != nil {
+	// 	return err
+	// }
+	//
+	// fmt.Println("Successfully connected to the database")
+	//
+	// genre, err := ds.GetGenre(context.Background(), 1)
+	// if err != nil {
+	// 	return err
+	// }
+	//
+	// fmt.Printf("Genre: %+v\n", genre)
+	//
+	// return nil
 }
