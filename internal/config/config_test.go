@@ -43,9 +43,9 @@ func TestConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "return a config with the PING_TIMEOUT env var if set",
+			name: "return a config with the DATABASE_PING_TIMEOUT env var if set",
 			envVars: map[string]string{
-				"PING_TIMEOUT": "500ms",
+				"DATABASE_PING_TIMEOUT": "500ms",
 			},
 			wantCfg: &config.Config{
 				DatabaseUrl:         "postgres://user:pass@localhost:5432/movie-land",

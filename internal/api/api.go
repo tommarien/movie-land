@@ -30,7 +30,7 @@ func New(cfg *config.Config, ds *datastore.Store) *Api {
 
 func (api *Api) Start(ctx context.Context) error {
 	mux := http.NewServeMux()
-	AddRoutes(mux)
+	RegisterRoutes(mux)
 
 	svr := &http.Server{
 		Addr:    fmt.Sprintf(":%d", api.cfg.Port),

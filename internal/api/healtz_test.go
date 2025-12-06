@@ -11,7 +11,7 @@ import (
 
 func TestGetHealtz(t *testing.T) {
 	mux := http.NewServeMux()
-	api.AddRoutes(mux)
+	api.RegisterRoutes(mux)
 
 	req := httptest.NewRequest("GET", "/healtz", nil)
 	rec := httptest.NewRecorder()

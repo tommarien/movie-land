@@ -14,7 +14,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		slog.Error("main: uncaught error", "error", err)
+		slog.Error("uncaught error", "error", err)
 		os.Exit(1)
 	}
 }
