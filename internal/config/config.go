@@ -1,10 +1,15 @@
 package config
 
-import "github.com/caarlos0/env/v11"
+import (
+	"time"
+
+	"github.com/caarlos0/env/v11"
+)
 
 type Config struct {
-	DatabaseUrl string `env:"DATABASE_URL,notEmpty"`
-	Port        int    `env:"PORT" envDefault:"3000"`
+	DatabaseUrl         string        `env:"DATABASE_URL,notEmpty"`
+	DatabasePingTimeout time.Duration `env:"DATABASE_PING_TIMEOUT" envDefault:"200ms"`
+	Port                int           `env:"PORT" envDefault:"3000"`
 }
 
 func FromEnv() (*Config, error) {

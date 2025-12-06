@@ -1,9 +1,8 @@
 package datastore
 
 import (
-	"context"
 	"errors"
-	"fmt"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,14 +18,12 @@ func New(pool *pgxpool.Pool) *Store {
 	return &Store{pool: pool}
 }
 
-func (ds *Store) Connect(ctx context.Context) error {
-	if err := ds.pool.Ping(ctx); err != nil {
-		return fmt.Errorf("database: connect: %w", err)
-	}
-	return nil
-}
-
 func isConstraintViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == uniqueConstraintViolationCode
+}
+
+func (ds *Store) Close() {
+	slog.Info("closing database connection pool")
+	ds.pool.Close()
 }

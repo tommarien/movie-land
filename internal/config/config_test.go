@@ -3,6 +3,7 @@ package config_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/tommarien/movie-land/internal/config"
@@ -25,8 +26,9 @@ func TestConfig(t *testing.T) {
 				"DATABASE_URL": "postgres://user:pass@localhost:5432/video-land",
 			},
 			wantCfg: &config.Config{
-				DatabaseUrl: "postgres://user:pass@localhost:5432/video-land",
-				Port:        3000,
+				DatabaseUrl:         "postgres://user:pass@localhost:5432/video-land",
+				Port:                3000,
+				DatabasePingTimeout: 200 * time.Millisecond,
 			},
 		},
 		{
@@ -35,8 +37,31 @@ func TestConfig(t *testing.T) {
 				"PORT": "4004",
 			},
 			wantCfg: &config.Config{
-				DatabaseUrl: "postgres://user:pass@localhost:5432/movie-land",
-				Port:        4004,
+				DatabaseUrl:         "postgres://user:pass@localhost:5432/movie-land",
+				Port:                4004,
+				DatabasePingTimeout: 200 * time.Millisecond,
+			},
+		},
+		{
+			name: "return a config with the PING_TIMEOUT env var if set",
+			envVars: map[string]string{
+				"PING_TIMEOUT": "500ms",
+			},
+			wantCfg: &config.Config{
+				DatabaseUrl:         "postgres://user:pass@localhost:5432/movie-land",
+				Port:                3000,
+				DatabasePingTimeout: 500 * time.Millisecond,
+			},
+		},
+		{
+			name: "return a config with the PORT env var if set",
+			envVars: map[string]string{
+				"PORT": "4004",
+			},
+			wantCfg: &config.Config{
+				DatabaseUrl:         "postgres://user:pass@localhost:5432/movie-land",
+				Port:                4004,
+				DatabasePingTimeout: 200 * time.Millisecond,
 			},
 		},
 		{

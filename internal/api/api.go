@@ -11,23 +11,24 @@ import (
 	"time"
 
 	"github.com/tommarien/movie-land/internal/config"
+	"github.com/tommarien/movie-land/internal/datastore"
 )
 
 const gracefulShutDownTimeout = 30 * time.Second
 
-var logger = slog.With("name", "api")
-
 type Api struct {
 	cfg *config.Config
+	ds  *datastore.Store
 }
 
-func New(cfg *config.Config) *Api {
+func New(cfg *config.Config, ds *datastore.Store) *Api {
 	return &Api{
 		cfg: cfg,
+		ds:  ds,
 	}
 }
 
-func (api *Api) Start() error {
+func (api *Api) Start(ctx context.Context) error {
 	mux := http.NewServeMux()
 	AddRoutes(mux)
 
@@ -37,11 +38,11 @@ func (api *Api) Start() error {
 	}
 
 	errChan := make(chan error)
-	notify, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	notify, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	go func() {
-		logger.Info("started listening", "port", api.cfg.Port)
+		slog.Info("started listening", "port", api.cfg.Port)
 		err := svr.ListenAndServe()
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errChan <- err
@@ -53,19 +54,19 @@ func (api *Api) Start() error {
 		return fmt.Errorf("api: could not start: %w", err)
 
 	case <-notify.Done():
-		logger.Info("received an os signal to shutdown")
+		slog.Info("received a signal to shutdown")
 		stop() // stop receiving signals, next ones will be handled by default behavior
 	}
 
-	logger.Info("gracefully shutting down")
+	slog.Info("gracefully shutting down")
 
-	ctx, cancel := context.WithTimeout(context.Background(), gracefulShutDownTimeout)
+	ctx, cancel := context.WithTimeout(ctx, gracefulShutDownTimeout)
 	defer cancel()
 
 	err := svr.Shutdown(ctx)
 	switch {
 	case errors.Is(err, http.ErrServerClosed):
-		logger.Warn("graceful shutdown timed out, forcing exit")
+		slog.Warn("graceful shutdown timed out, forcing exit")
 		return svr.Close()
 	case err != nil:
 		return fmt.Errorf("api: shutdown error: %w", err)
