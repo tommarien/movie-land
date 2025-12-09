@@ -17,20 +17,20 @@ import (
 const gracefulShutDownTimeout = 30 * time.Second
 
 type Api struct {
-	cfg *config.Config
-	ds  *datastore.Store
+	cfg   *config.Config
+	store *datastore.Store
 }
 
-func New(cfg *config.Config, ds *datastore.Store) *Api {
+func New(cfg *config.Config, store *datastore.Store) *Api {
 	return &Api{
-		cfg: cfg,
-		ds:  ds,
+		cfg:   cfg,
+		store: store,
 	}
 }
 
 func (api *Api) Start(ctx context.Context) error {
 	mux := http.NewServeMux()
-	RegisterRoutes(mux)
+	RegisterRoutes(mux, api.store)
 
 	svr := &http.Server{
 		Addr:    fmt.Sprintf(":%d", api.cfg.Port),

@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"database/sql"
@@ -20,11 +21,45 @@ var (
 	ErrGenreNotFound   = errors.New("datastore: genre not found")
 )
 
+func (ds *Store) ListGenres(ctx context.Context) ([]*Genre, error) {
+	genres := make([]*Genre, 0)
+
+	const qry = `
+	SELECT id, slug, name, created_at
+	FROM genres ORDER BY slug ASC`
+
+	rows, err := ds.pool.Query(ctx, qry)
+	if err != nil {
+		return nil, fmt.Errorf("datastore: ListGenres: could not query: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var genre Genre
+		err := rows.Scan(
+			&genre.ID,
+			&genre.Slug,
+			&genre.Name,
+			&genre.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("datastore: ListGenres: could not scan row: %w", err)
+		}
+		genres = append(genres, &genre)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("datastore: ListGenres: rows error: %w", err)
+	}
+
+	return genres, nil
+}
+
 func (ds *Store) GetGenre(ctx context.Context, ID int) (*Genre, error) {
 	var genre Genre
 
 	const qry = `
-	SELECT id, slug, name, created_at 
+	SELECT id, slug, name, created_at
 	FROM genres WHERE id=$1`
 
 	err := ds.pool.QueryRow(
@@ -54,7 +89,7 @@ func (ds *Store) InsertGenre(ctx context.Context, genre *Genre) error {
 	}
 
 	const qry = `
-	INSERT INTO genres (slug, name) 
+	INSERT INTO genres (slug, name)
 	VALUES ($1, $2) RETURNING id, created_at`
 
 	err := ds.pool.QueryRow(
@@ -83,8 +118,8 @@ func (ds *Store) UpdateGenre(ctx context.Context, genre *Genre) error {
 	}
 
 	const qry = `
-	UPDATE genres 
-	SET slug = $2, name = $3 
+	UPDATE genres
+	SET slug = $2, name = $3
 	WHERE id = $1`
 
 	_, err := ds.pool.Exec(

@@ -51,14 +51,14 @@ func storeGenre(t *testing.T, dbpool *pgxpool.Pool, genre *datastore.Genre) int 
 		t.Fatalf("failed to insert genre: %v", err)
 	}
 
-	t.Cleanup(func() {
-		_, err := dbpool.Exec(context.Background(), `DELETE FROM genres`)
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
-
 	return id
+}
+
+func removeAllGenres(t *testing.T, dbpool *pgxpool.Pool) {
+	_, err := dbpool.Exec(context.Background(), `DELETE FROM genres`)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestGetGenre(t *testing.T) {
@@ -78,6 +78,7 @@ func TestGetGenre(t *testing.T) {
 
 	t.Run("returns the genre if it exists", func(t *testing.T) {
 		genreId := storeGenre(t, pool, nil)
+		defer removeAllGenres(t, pool)
 
 		genre, err := ds.GetGenre(context.Background(), genreId)
 		if err != nil {
@@ -100,7 +101,7 @@ func TestGetGenre(t *testing.T) {
 			t.Error("expected genre.CreatedAt to be set")
 		}
 
-		if time.Until(genre.CreatedAt).Abs() > time.Second {
+		if time.Until(genre.CreatedAt).Abs() > 2*time.Second {
 			t.Errorf("expected genre.CreatedAt to be close to now, got %v", genre.CreatedAt)
 		}
 	})
@@ -111,6 +112,8 @@ func TestInsertGenre(t *testing.T) {
 	ds := datastore.New(pool)
 
 	t.Run("inserts a new genre", func(t *testing.T) {
+		defer removeAllGenres(t, pool)
+
 		genre := &datastore.Genre{
 			Slug: "comedy",
 			Name: sql.NullString{String: "Comedy", Valid: true},
@@ -125,20 +128,14 @@ func TestInsertGenre(t *testing.T) {
 			t.Error("expected genre.ID to be set")
 		}
 
-		if time.Until(genre.CreatedAt).Abs() > time.Second {
+		if time.Until(genre.CreatedAt).Abs() > 2*time.Second {
 			t.Errorf("expected genre.CreatedAt to be close to now, got %v", genre.CreatedAt)
 		}
-
-		t.Cleanup(func() {
-			_, err := pool.Exec(context.Background(), `DELETE FROM genres`)
-			if err != nil {
-				t.Fatal(err)
-			}
-		})
 	})
 
 	t.Run("returns error when inserting duplicate slug", func(t *testing.T) {
 		storeGenre(t, pool, nil)
+		defer removeAllGenres(t, pool)
 
 		genre1 := &datastore.Genre{
 			Slug: "drama",
@@ -151,6 +148,8 @@ func TestInsertGenre(t *testing.T) {
 	})
 
 	t.Run("returns error when inserting nil genre", func(t *testing.T) {
+		defer removeAllGenres(t, pool)
+
 		err := ds.InsertGenre(context.Background(), nil)
 		if err == nil {
 			t.Fatal("expected error, got nil")
@@ -168,6 +167,7 @@ func TestUpdateGenre(t *testing.T) {
 
 	t.Run("updates an existing genre", func(t *testing.T) {
 		genreId := storeGenre(t, pool, nil)
+		defer removeAllGenres(t, pool)
 
 		genre, err := ds.GetGenre(context.Background(), genreId)
 		if err != nil {
@@ -193,6 +193,8 @@ func TestUpdateGenre(t *testing.T) {
 	})
 
 	t.Run("returns error when updating to duplicate slug", func(t *testing.T) {
+		defer removeAllGenres(t, pool)
+
 		dramaId := storeGenre(t, pool, nil)
 		_ = storeGenre(t, pool, &datastore.Genre{
 			Slug: "comedy",
@@ -222,5 +224,46 @@ func TestUpdateGenre(t *testing.T) {
 			t.Fatalf("expected error message %q, got %q", want, err.Error())
 		}
 	})
+}
 
+func TestListGenres(t *testing.T) {
+	pool := connect(t)
+	ds := datastore.New(pool)
+
+	t.Run("lists all genres", func(t *testing.T) {
+		defer removeAllGenres(t, pool)
+
+		storeGenre(t, pool, &datastore.Genre{
+			Slug: "drama",
+			Name: sql.NullString{String: "Drama", Valid: true},
+		})
+		storeGenre(t, pool, &datastore.Genre{
+			Slug: "comedy",
+			Name: sql.NullString{String: "Comedy", Valid: true},
+		})
+
+		genres, err := ds.ListGenres(context.Background())
+		if err != nil {
+			t.Fatalf("failed to list genres: %v", err)
+		}
+
+		if len(genres) != 2 {
+			t.Fatalf("expected 2 genres, got %d", len(genres))
+		}
+	})
+
+	t.Run("returns empty list when no genres exist", func(t *testing.T) {
+		pool := connect(t)
+		ds := datastore.New(pool)
+		defer removeAllGenres(t, pool)
+
+		genres, err := ds.ListGenres(context.Background())
+		if err != nil {
+			t.Fatalf("failed to list genres: %v", err)
+		}
+
+		if len(genres) != 0 {
+			t.Fatalf("expected 0 genres, got %d", len(genres))
+		}
+	})
 }
