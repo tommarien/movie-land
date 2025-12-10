@@ -34,9 +34,9 @@ func handleGenreIndex(store genreStore) http.HandlerFunc {
 			data = append(data, dto)
 		}
 
-		err = encode(w, http.StatusOK, map[string]any{
+		err = writeJSON(w, http.StatusOK, map[string]any{
 			"data": data,
-		})
+		}, nil)
 
 		if err != nil {
 			handleInternalServerEror(w, r, err)
