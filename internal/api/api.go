@@ -38,7 +38,7 @@ func (api *Api) Start(ctx context.Context) error {
 	}
 
 	errChan := make(chan error)
-	notify, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	shutdownCtx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	go func() {
@@ -53,19 +53,21 @@ func (api *Api) Start(ctx context.Context) error {
 	case err := <-errChan:
 		return fmt.Errorf("api: could not start: %w", err)
 
-	case <-notify.Done():
+	case <-shutdownCtx.Done():
 		slog.Info("received a signal to shutdown")
 		stop() // stop receiving signals, next ones will be handled by default behavior
 	}
 
 	slog.Info("gracefully shutting down")
 
-	ctx, cancel := context.WithTimeout(ctx, gracefulShutDownTimeout)
+	// Important to use a new context here,
+	// as the shutdownCtx is already done when a signal is received
+	ctx, cancel := context.WithTimeout(context.Background(), gracefulShutDownTimeout)
 	defer cancel()
 
 	err := svr.Shutdown(ctx)
 	switch {
-	case errors.Is(err, http.ErrServerClosed):
+	case errors.Is(err, context.DeadlineExceeded):
 		slog.Warn("graceful shutdown timed out, forcing exit")
 		return svr.Close()
 	case err != nil:
