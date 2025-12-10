@@ -42,9 +42,11 @@ func (api *Api) Start(ctx context.Context) error {
 	defer stop()
 
 	go func() {
+		// close the error channel when this goroutine ends
+		defer close(errChan)
+
 		slog.Info("started listening", "port", api.cfg.Port)
-		err := svr.ListenAndServe()
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := svr.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errChan <- err
 		}
 	}()
@@ -58,7 +60,7 @@ func (api *Api) Start(ctx context.Context) error {
 		stop() // stop receiving signals, next ones will be handled by default behavior
 	}
 
-	slog.Info("gracefully shutting down")
+	slog.Info("gracefully shutting down", "timeout", gracefulShutDownTimeout)
 
 	// Important to use a new context here,
 	// as the shutdownCtx is already done when a signal is received
