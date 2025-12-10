@@ -15,12 +15,19 @@ type Store struct {
 }
 
 func New(pool *pgxpool.Pool) *Store {
+	if pool == nil {
+		panic("store: pool is nil")
+	}
+
 	return &Store{pool: pool}
 }
 
-func isConstraintViolation(err error) bool {
+func isConstraintViolation(err error) string {
 	var pgErr *pgconn.PgError
-	return errors.As(err, &pgErr) && pgErr.Code == uniqueConstraintViolationCode
+	if errors.As(err, &pgErr) && pgErr.Code == uniqueConstraintViolationCode {
+		return pgErr.ConstraintName
+	}
+	return ""
 }
 
 func (ds *Store) Close() {

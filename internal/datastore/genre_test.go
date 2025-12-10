@@ -214,6 +214,20 @@ func TestUpdateGenre(t *testing.T) {
 		}
 	})
 
+	t.Run("returns error when updating non-existent genre", func(t *testing.T) {
+		defer removeAllGenres(t, pool)
+
+		genre := &datastore.Genre{
+			ID:   99999,
+			Slug: "non-existent",
+		}
+
+		err := ds.UpdateGenre(context.Background(), genre)
+		if !errors.Is(err, datastore.ErrGenreNotFound) {
+			t.Fatalf("expected ErrGenreNotFound, got %v", err)
+		}
+	})
+
 	t.Run("returns error when updating nil genre", func(t *testing.T) {
 		err := ds.UpdateGenre(context.Background(), nil)
 		if err == nil {

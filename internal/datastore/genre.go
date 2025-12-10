@@ -22,7 +22,7 @@ var (
 )
 
 func (ds *Store) ListGenres(ctx context.Context) ([]*Genre, error) {
-	genres := make([]*Genre, 0)
+	var genres []*Genre
 
 	const qry = `
 	SELECT id, slug, name, created_at
@@ -103,7 +103,7 @@ func (ds *Store) InsertGenre(ctx context.Context, genre *Genre) error {
 	)
 
 	if err != nil {
-		if isConstraintViolation(err) {
+		if isConstraintViolation(err) != "" {
 			return ErrGenreSlugExists
 		}
 		return err
@@ -122,7 +122,7 @@ func (ds *Store) UpdateGenre(ctx context.Context, genre *Genre) error {
 	SET slug = $2, name = $3
 	WHERE id = $1`
 
-	_, err := ds.pool.Exec(
+	result, err := ds.pool.Exec(
 		ctx,
 		qry,
 		genre.ID,
@@ -131,10 +131,14 @@ func (ds *Store) UpdateGenre(ctx context.Context, genre *Genre) error {
 	)
 
 	if err != nil {
-		if isConstraintViolation(err) {
+		if isConstraintViolation(err) != "" {
 			return ErrGenreSlugExists
 		}
 		return err
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrGenreNotFound
 	}
 
 	return nil
