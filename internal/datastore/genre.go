@@ -17,8 +17,8 @@ type Genre struct {
 }
 
 var (
-	ErrGenreSlugExists = errors.New("datastore: genre with this slug already exists")
-	ErrGenreNotFound   = errors.New("datastore: genre not found")
+	ErrGenreSlugExists = errors.New("store: genre with this slug already exists")
+	ErrGenreNotFound   = errors.New("store: genre not found")
 )
 
 func (ds *Store) ListGenres(ctx context.Context) ([]*Genre, error) {
@@ -30,7 +30,7 @@ func (ds *Store) ListGenres(ctx context.Context) ([]*Genre, error) {
 
 	rows, err := ds.pool.Query(ctx, qry)
 	if err != nil {
-		return nil, fmt.Errorf("datastore: ListGenres: could not query: %w", err)
+		return nil, fmt.Errorf("store: ListGenres: could not query: %w", err)
 	}
 	defer rows.Close()
 
@@ -43,13 +43,13 @@ func (ds *Store) ListGenres(ctx context.Context) ([]*Genre, error) {
 			&genre.CreatedAt,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("datastore: ListGenres: could not scan row: %w", err)
+			return nil, fmt.Errorf("store: ListGenres: could not scan row: %w", err)
 		}
 		genres = append(genres, &genre)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("datastore: ListGenres: rows error: %w", err)
+		return nil, fmt.Errorf("store: ListGenres: rows error: %w", err)
 	}
 
 	return genres, nil
@@ -85,7 +85,7 @@ func (ds *Store) GetGenre(ctx context.Context, ID int) (*Genre, error) {
 
 func (ds *Store) InsertGenre(ctx context.Context, genre *Genre) error {
 	if genre == nil {
-		return errors.New("datastore: InsertGenre: genre is nil")
+		return errors.New("store: InsertGenre: genre is nil")
 	}
 
 	const qry = `
@@ -114,7 +114,7 @@ func (ds *Store) InsertGenre(ctx context.Context, genre *Genre) error {
 
 func (ds *Store) UpdateGenre(ctx context.Context, genre *Genre) error {
 	if genre == nil {
-		return errors.New("datastore: UpdateGenre: genre is nil")
+		return errors.New("store: UpdateGenre: genre is nil")
 	}
 
 	const qry = `

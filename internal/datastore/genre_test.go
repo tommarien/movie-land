@@ -155,7 +155,7 @@ func TestInsertGenre(t *testing.T) {
 			t.Fatal("expected error, got nil")
 		}
 
-		if want := "datastore: InsertGenre: genre is nil"; err.Error() != want {
+		if want := "store: InsertGenre: genre is nil"; err.Error() != want {
 			t.Fatalf("expected error message %q, got %q", want, err.Error())
 		}
 	})
@@ -234,7 +234,7 @@ func TestUpdateGenre(t *testing.T) {
 			t.Fatal("expected error, got nil")
 		}
 
-		if want := "datastore: UpdateGenre: genre is nil"; err.Error() != want {
+		if want := "store: UpdateGenre: genre is nil"; err.Error() != want {
 			t.Fatalf("expected error message %q, got %q", want, err.Error())
 		}
 	})
