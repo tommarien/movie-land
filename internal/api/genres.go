@@ -19,18 +19,21 @@ type GenreDto struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+func registerGenreRoutes(mux *http.ServeMux, store genreStore) {
+	mux.HandleFunc("/api/v1/genres", handleGenreIndex(store))
+}
+
 func handleGenreIndex(store genreStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		dbGenres, err := store.ListGenres(r.Context())
-
+		genres, err := store.ListGenres(r.Context())
 		if err != nil {
 			handleInternalServerEror(w, r, err)
 			return
 		}
 
-		data := make([]*GenreDto, 0, len(dbGenres))
-		for _, genre := range dbGenres {
-			dto := mapGenre(genre)
+		data := make([]*GenreDto, 0, len(genres))
+		for _, g := range genres {
+			dto := mapGenre(g)
 			data = append(data, dto)
 		}
 

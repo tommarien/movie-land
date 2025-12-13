@@ -61,6 +61,26 @@ func removeAllGenres(t *testing.T, dbpool *pgxpool.Pool) {
 	}
 }
 
+func expectGenre(t *testing.T, want, got *datastore.Genre) {
+	t.Helper()
+
+	if want.ID != got.ID {
+		t.Errorf("expected genre ID %d, got %d", want.ID, got.ID)
+	}
+
+	if want.Slug != got.Slug {
+		t.Errorf("expected genre Slug %s, got %s", want.Slug, got.Slug)
+	}
+
+	if want.Name != got.Name {
+		t.Errorf("expected genre Name %v, got %v", want.Name, got.Name)
+	}
+
+	if want.CreatedAt.Sub(got.CreatedAt).Abs() > 2*time.Second {
+		t.Errorf("expected genre CreatedAt %v, got %v", want.CreatedAt, got.CreatedAt)
+	}
+}
+
 func TestGetGenre(t *testing.T) {
 	pool := connect(t)
 	ds := datastore.New(pool)
@@ -85,25 +105,12 @@ func TestGetGenre(t *testing.T) {
 			t.Fatalf("failed to get genre: %v", err)
 		}
 
-		if genre.ID != genreId {
-			t.Errorf("expected genre.ID to be %d, got %d", genreId, genre.ID)
-		}
-
-		if genre.Slug != "drama" {
-			t.Errorf("expected genre.Slug to be drama, got %s", genre.Slug)
-		}
-
-		if genre.Name.String != "Drama" {
-			t.Errorf("expected genre.Name to be Drama, got %v", genre.Name)
-		}
-
-		if genre.CreatedAt.IsZero() {
-			t.Error("expected genre.CreatedAt to be set")
-		}
-
-		if time.Until(genre.CreatedAt).Abs() > 2*time.Second {
-			t.Errorf("expected genre.CreatedAt to be close to now, got %v", genre.CreatedAt)
-		}
+		expectGenre(t, &datastore.Genre{
+			ID:        genreId,
+			Slug:      "drama",
+			Name:      sql.NullString{String: "Drama", Valid: true},
+			CreatedAt: time.Now(),
+		}, genre)
 	})
 }
 
@@ -247,11 +254,11 @@ func TestListGenres(t *testing.T) {
 	t.Run("lists all genres", func(t *testing.T) {
 		defer removeAllGenres(t, pool)
 
-		storeGenre(t, pool, &datastore.Genre{
+		dramaID := storeGenre(t, pool, &datastore.Genre{
 			Slug: "drama",
 			Name: sql.NullString{String: "Drama", Valid: true},
 		})
-		storeGenre(t, pool, &datastore.Genre{
+		comedyID := storeGenre(t, pool, &datastore.Genre{
 			Slug: "comedy",
 			Name: sql.NullString{String: "Comedy", Valid: true},
 		})
@@ -264,6 +271,20 @@ func TestListGenres(t *testing.T) {
 		if len(genres) != 2 {
 			t.Fatalf("expected 2 genres, got %d", len(genres))
 		}
+
+		expectGenre(t, &datastore.Genre{
+			ID:        comedyID,
+			Slug:      "comedy",
+			Name:      sql.NullString{String: "Comedy", Valid: true},
+			CreatedAt: time.Now(),
+		}, genres[0])
+
+		expectGenre(t, &datastore.Genre{
+			ID:        dramaID,
+			Slug:      "drama",
+			Name:      sql.NullString{String: "Drama", Valid: true},
+			CreatedAt: time.Now(),
+		}, genres[1])
 	})
 
 	t.Run("returns empty list when no genres exist", func(t *testing.T) {

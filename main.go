@@ -27,31 +27,21 @@ func run() error {
 
 	ctx := context.Background()
 
-	ds, err := createDatastore(ctx, cfg)
+	pool, err := pg.Connect(ctx, pg.PoolOptions{
+		ConnString:  cfg.DatabaseUrl,
+		PingTimeout: cfg.DatabasePingTimeout,
+	})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to connect to db: %w", err)
 	}
-	defer ds.Close()
+	defer pool.Close()
 
-	api := api.New(cfg, ds)
+	store := datastore.New(pool)
+
+	api := api.New(cfg, store)
 	if err = api.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start api: %w", err)
 	}
 
 	return nil
-}
-
-func createDatastore(ctx context.Context, cfg *config.Config) (*datastore.Store, error) {
-	opts := pg.PoolOptions{
-		ConnString:  cfg.DatabaseUrl,
-		PingTimeout: cfg.DatabasePingTimeout,
-	}
-
-	pool, err := pg.Connect(ctx, opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to db: %w", err)
-	}
-
-	ds := datastore.New(pool)
-	return ds, nil
 }

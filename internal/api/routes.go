@@ -9,5 +9,5 @@ import (
 func RegisterRoutes(mux *http.ServeMux, store *datastore.Store) {
 	mux.HandleFunc("GET /healtz", handleHealtzIndex)
 
-	mux.HandleFunc("GET /api/v1/genres", handleGenreIndex(store))
+	registerGenreRoutes(mux, store)
 }

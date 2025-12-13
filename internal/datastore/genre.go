@@ -103,7 +103,7 @@ func (ds *Store) InsertGenre(ctx context.Context, genre *Genre) error {
 	)
 
 	if err != nil {
-		if isConstraintViolation(err) != "" {
+		if getConstraintViolationName(err) != "" {
 			return ErrGenreSlugExists
 		}
 		return err
@@ -131,7 +131,7 @@ func (ds *Store) UpdateGenre(ctx context.Context, genre *Genre) error {
 	)
 
 	if err != nil {
-		if isConstraintViolation(err) != "" {
+		if getConstraintViolationName(err) != "" {
 			return ErrGenreSlugExists
 		}
 		return err
