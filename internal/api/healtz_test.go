@@ -1,17 +1,15 @@
-package api_test
+package api
 
 import (
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/tommarien/movie-land/internal/api"
 )
 
 func TestGetHealtz(t *testing.T) {
 	mux := http.NewServeMux()
-	api.RegisterRoutes(mux, nil)
+	mux.HandleFunc("/healtz", handleHealtzIndex)
 
 	req := httptest.NewRequest("GET", "/healtz", nil)
 	rec := httptest.NewRecorder()

@@ -6,8 +6,9 @@ import (
 	"github.com/tommarien/movie-land/internal/datastore"
 )
 
-func RegisterRoutes(mux *http.ServeMux, store *datastore.Store) {
+func registerRoutes(mux *http.ServeMux, store *datastore.Store) {
 	mux.HandleFunc("GET /healtz", handleHealtzIndex)
 
-	registerGenreRoutes(mux, store)
+	mux.HandleFunc("GET /api/v1/genres", handleGenreIndex(store))
+	mux.HandleFunc("GET /api/v1/genres/{id}", handleGenreGet(store))
 }

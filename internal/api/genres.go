@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 
 type genreStore interface {
 	ListGenres(ctx context.Context) ([]*datastore.Genre, error)
+	GetGenre(ctx context.Context, ID int) (*datastore.Genre, error)
 }
 
 type GenreDto struct {
@@ -19,8 +21,33 @@ type GenreDto struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-func registerGenreRoutes(mux *http.ServeMux, store genreStore) {
-	mux.HandleFunc("/api/v1/genres", handleGenreIndex(store))
+func handleGenreGet(store genreStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := getIntParam(r, "id")
+		if err != nil {
+			handleNotFound(w, "genre not found")
+			return
+		}
+
+		genre, err := store.GetGenre(r.Context(), id)
+		if err != nil {
+			if errors.Is(err, datastore.ErrGenreNotFound) {
+				handleNotFound(w, "genre not found")
+				return
+			}
+			handleInternalServerEror(w, r, err)
+			return
+		}
+
+		err = writeJSON(w, http.StatusOK, map[string]any{
+			"data": mapGenre(genre),
+		}, nil)
+
+		if err != nil {
+			handleInternalServerEror(w, r, err)
+			return
+		}
+	}
 }
 
 func handleGenreIndex(store genreStore) http.HandlerFunc {
