@@ -30,7 +30,7 @@ func handleGenreGet(store GenreStore) http.HandlerFunc {
 				handleNotFound(w, "genre not found")
 				return
 			}
-			handleInternalServerEror(w, r, err)
+			handleInternalServerError(w, r, err)
 			return
 		}
 
@@ -39,7 +39,7 @@ func handleGenreGet(store GenreStore) http.HandlerFunc {
 		}, nil)
 
 		if err != nil {
-			handleInternalServerEror(w, r, err)
+			handleInternalServerError(w, r, err)
 			return
 		}
 	}
@@ -49,7 +49,7 @@ func handleGenreIndex(store GenreStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		genres, err := store.ListGenres(r.Context())
 		if err != nil {
-			handleInternalServerEror(w, r, err)
+			handleInternalServerError(w, r, err)
 			return
 		}
 
@@ -64,7 +64,7 @@ func handleGenreIndex(store GenreStore) http.HandlerFunc {
 		}, nil)
 
 		if err != nil {
-			handleInternalServerEror(w, r, err)
+			handleInternalServerError(w, r, err)
 			return
 		}
 	}
@@ -109,7 +109,7 @@ func handleGenrePost(store GenreStore) http.HandlerFunc {
 				handleConflict(w, "genre with this slug already exists")
 				return
 			}
-			handleInternalServerEror(w, r, err)
+			handleInternalServerError(w, r, err)
 			return
 		}
 
@@ -118,7 +118,7 @@ func handleGenrePost(store GenreStore) http.HandlerFunc {
 			"data": dto,
 		}, nil)
 		if err != nil {
-			handleInternalServerEror(w, r, err)
+			handleInternalServerError(w, r, err)
 			return
 		}
 	}
