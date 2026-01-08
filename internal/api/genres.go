@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -10,12 +9,6 @@ import (
 	"github.com/tommarien/movie-land/internal/validator"
 )
 
-type genreStore interface {
-	ListGenres(ctx context.Context) ([]*datastore.Genre, error)
-	GetGenre(ctx context.Context, ID int) (*datastore.Genre, error)
-	InsertGenre(ctx context.Context, genre *datastore.Genre) error
-}
-
 type GenreDto struct {
 	ID        int       `json:"id"`
 	Slug      string    `json:"slug"`
@@ -23,7 +16,7 @@ type GenreDto struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-func handleGenreGet(store genreStore) http.HandlerFunc {
+func handleGenreGet(store GenreStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := getIntParam(r, "id")
 		if err != nil {
@@ -52,7 +45,7 @@ func handleGenreGet(store genreStore) http.HandlerFunc {
 	}
 }
 
-func handleGenreIndex(store genreStore) http.HandlerFunc {
+func handleGenreIndex(store GenreStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		genres, err := store.ListGenres(r.Context())
 		if err != nil {
@@ -77,7 +70,7 @@ func handleGenreIndex(store genreStore) http.HandlerFunc {
 	}
 }
 
-func handleGenrePost(store genreStore) http.HandlerFunc {
+func handleGenrePost(store GenreStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			Slug string `json:"slug"`

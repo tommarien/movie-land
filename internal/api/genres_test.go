@@ -133,7 +133,7 @@ func TestGetGenres(t *testing.T) {
 			mockStore := &mockGenreStore{
 				listGenresFunc: tt.mockFunc,
 			}
-			mux.HandleFunc("GET /api/v1/genres", handleGenreIndex(mockStore))
+			registerRoutes(mux, mockStore)
 
 			req := httptest.NewRequest("GET", "/api/v1/genres", nil)
 			rec := httptest.NewRecorder()
@@ -238,6 +238,7 @@ func TestGetGenre(t *testing.T) {
 				getGenreFunc: tt.mockFunc,
 			}
 			mux.HandleFunc("/api/v1/genres/{id}", handleGenreGet(mockStore))
+			registerRoutes(mux, mockStore)
 
 			if tt.IDParam == "" {
 				tt.IDParam = "1"
@@ -381,7 +382,7 @@ func TestPostGenre(t *testing.T) {
 			mockStore := &mockGenreStore{
 				insertGenreFunc: tt.mockFunc,
 			}
-			mux.HandleFunc("POST /api/v1/genres", handleGenrePost(mockStore))
+			registerRoutes(mux, mockStore)
 
 			var req *http.Request
 			if tt.requestBody == nil {
