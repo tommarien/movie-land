@@ -11,4 +11,5 @@ func registerRoutes(mux *http.ServeMux, store *datastore.Store) {
 
 	mux.HandleFunc("GET /api/v1/genres", handleGenreIndex(store))
 	mux.HandleFunc("GET /api/v1/genres/{id}", handleGenreGet(store))
+	mux.HandleFunc("POST /api/v1/genres", handleGenrePost(store))
 }

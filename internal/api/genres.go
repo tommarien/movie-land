@@ -7,11 +7,13 @@ import (
 	"time"
 
 	"github.com/tommarien/movie-land/internal/datastore"
+	"github.com/tommarien/movie-land/internal/validator"
 )
 
 type genreStore interface {
 	ListGenres(ctx context.Context) ([]*datastore.Genre, error)
 	GetGenre(ctx context.Context, ID int) (*datastore.Genre, error)
+	InsertGenre(ctx context.Context, genre *datastore.Genre) error
 }
 
 type GenreDto struct {
@@ -68,6 +70,60 @@ func handleGenreIndex(store genreStore) http.HandlerFunc {
 			"data": data,
 		}, nil)
 
+		if err != nil {
+			handleInternalServerEror(w, r, err)
+			return
+		}
+	}
+}
+
+func handleGenrePost(store genreStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			Slug string `json:"slug"`
+			Name string `json:"name"`
+		}
+
+		err := readJSON(w, r, &input)
+		if err != nil {
+			handleBadRequest(w, err.Error(), nil)
+			return
+		}
+
+		v := validator.New()
+		v.Required("slug", input.Slug)
+		v.MaxLength("slug", input.Slug, 40)
+		v.Slug("slug", input.Slug)
+		v.MaxLength("name", input.Name, 40)
+
+		if !v.IsValid() {
+			handleBadRequest(w, "", v.GetErrors())
+			return
+		}
+
+		genre := &datastore.Genre{
+			Slug: input.Slug,
+		}
+
+		if input.Name != "" {
+			genre.Name.String = input.Name
+			genre.Name.Valid = true
+		}
+
+		err = store.InsertGenre(r.Context(), genre)
+		if err != nil {
+			if errors.Is(err, datastore.ErrGenreSlugExists) {
+				handleConflict(w, "genre with this slug already exists")
+				return
+			}
+			handleInternalServerEror(w, r, err)
+			return
+		}
+
+		dto := mapGenre(genre)
+		err = writeJSON(w, http.StatusCreated, map[string]any{
+			"data": dto,
+		}, nil)
 		if err != nil {
 			handleInternalServerEror(w, r, err)
 			return
