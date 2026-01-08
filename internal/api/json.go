@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"maps"
 	"net/http"
 	"strings"
@@ -21,7 +22,10 @@ func writeJSON(w http.ResponseWriter, status int, data any, headers http.Header)
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(status)
-	w.Write(json)
+	_, err = w.Write(json)
+	if err != nil {
+		slog.Error("writeJSON: write response", "err", err)
+	}
 
 	return nil
 }
