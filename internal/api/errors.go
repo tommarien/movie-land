@@ -17,10 +17,13 @@ func handleNotFound(w http.ResponseWriter, message string) {
 
 	statusCode := http.StatusNotFound
 
-	writeJSON(w, statusCode, map[string]any{
+	err := writeJSON(w, statusCode, map[string]any{
 		"status":  statusCode,
 		"message": message,
 	}, nil)
+	if err != nil {
+		slog.Error("handleNotFound: writeJSON", "err", err)
+	}
 }
 
 func handleConflict(w http.ResponseWriter, message string) {
@@ -30,10 +33,13 @@ func handleConflict(w http.ResponseWriter, message string) {
 
 	statusCode := http.StatusConflict
 
-	writeJSON(w, statusCode, map[string]any{
+	err := writeJSON(w, statusCode, map[string]any{
 		"status":  statusCode,
 		"message": message,
 	}, nil)
+	if err != nil {
+		slog.Error("handleConflict: writeJSON", "err", err)
+	}
 }
 
 func handleBadRequest(w http.ResponseWriter, message string, errors []string) {
@@ -50,5 +56,8 @@ func handleBadRequest(w http.ResponseWriter, message string, errors []string) {
 		response["errors"] = errors
 	}
 
-	writeJSON(w, http.StatusBadRequest, response, nil)
+	err := writeJSON(w, http.StatusBadRequest, response, nil)
+	if err != nil {
+		slog.Error("handleBadRequest: writeJSON", "err", err)
+	}
 }
