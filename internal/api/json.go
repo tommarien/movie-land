@@ -11,11 +11,10 @@ import (
 	"strings"
 )
 
-func writeJSON(w http.ResponseWriter, r *http.Request, status int, data any, headers http.Header) {
+func writeJSON(w http.ResponseWriter, r *http.Request, status int, data any, headers http.Header) error {
 	json, err := json.Marshal(data)
 	if err != nil {
-		handleInternalServerError(w, r, fmt.Errorf("writeJSON: marshal data: %w", err))
-		return
+		return fmt.Errorf("writeJSON: marshal data: %w", err)
 	}
 
 	maps.Copy(w.Header(), headers)
@@ -28,6 +27,8 @@ func writeJSON(w http.ResponseWriter, r *http.Request, status int, data any, hea
 	if err != nil {
 		slog.Error("writeJSON: write response", "method", r.Method, "url", r.URL, "err", err)
 	}
+
+	return nil
 }
 
 const maxBytes = 1_048_576

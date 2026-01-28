@@ -16,36 +16,32 @@ type GenreDto struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-func handleGenreGet(store GenreStore) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func handleGenreGet(store GenreStore) HandlerFuncWithError {
+	return func(w http.ResponseWriter, r *http.Request) error {
 		id, err := getIntParam(r, "id")
 		if err != nil {
-			handleNotFound(w, r, "genre not found")
-			return
+			return NewNotFound("genre not found")
 		}
 
 		genre, err := store.GetGenre(r.Context(), id)
 		if err != nil {
 			if errors.Is(err, datastore.ErrGenreNotFound) {
-				handleNotFound(w, r, "genre not found")
-				return
+				return NewNotFound("genre not found")
 			}
-			handleInternalServerError(w, r, err)
-			return
+			return err
 		}
 
-		writeJSON(w, r, http.StatusOK, map[string]any{
+		return writeJSON(w, r, http.StatusOK, map[string]any{
 			"data": mapGenre(genre),
 		}, nil)
 	}
 }
 
-func handleGenreIndex(store GenreStore) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func handleGenreIndex(store GenreStore) HandlerFuncWithError {
+	return func(w http.ResponseWriter, r *http.Request) error {
 		genres, err := store.ListGenres(r.Context())
 		if err != nil {
-			handleInternalServerError(w, r, err)
-			return
+			return err
 		}
 
 		data := make([]*GenreDto, 0, len(genres))
@@ -54,14 +50,14 @@ func handleGenreIndex(store GenreStore) http.HandlerFunc {
 			data = append(data, dto)
 		}
 
-		writeJSON(w, r, http.StatusOK, map[string]any{
+		return writeJSON(w, r, http.StatusOK, map[string]any{
 			"data": data,
 		}, nil)
 	}
 }
 
-func handleGenrePost(store GenreStore) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func handleGenrePost(store GenreStore) HandlerFuncWithError {
+	return func(w http.ResponseWriter, r *http.Request) error {
 		var input struct {
 			Slug string `json:"slug"`
 			Name string `json:"name"`
@@ -69,8 +65,7 @@ func handleGenrePost(store GenreStore) http.HandlerFunc {
 
 		err := readJSON(w, r, &input)
 		if err != nil {
-			handleBadRequest(w, r, err.Error(), nil)
-			return
+			return NewBadRequest(err.Error(), nil)
 		}
 
 		v := validator.New()
@@ -80,8 +75,7 @@ func handleGenrePost(store GenreStore) http.HandlerFunc {
 		v.MaxLength("name", input.Name, 40)
 
 		if !v.IsValid() {
-			handleBadRequest(w, r, "", v.GetErrors())
-			return
+			return NewBadRequest("", v.GetErrors())
 		}
 
 		genre := &datastore.Genre{
@@ -96,15 +90,13 @@ func handleGenrePost(store GenreStore) http.HandlerFunc {
 		err = store.InsertGenre(r.Context(), genre)
 		if err != nil {
 			if errors.Is(err, datastore.ErrGenreSlugExists) {
-				handleConflict(w, r, "genre with this slug already exists")
-				return
+				return NewConflict("genre with this slug already exists")
 			}
-			handleInternalServerError(w, r, err)
-			return
+			return err
 		}
 
 		dto := mapGenre(genre)
-		writeJSON(w, r, http.StatusCreated, map[string]any{
+		return writeJSON(w, r, http.StatusCreated, map[string]any{
 			"data": dto,
 		}, nil)
 	}

@@ -18,7 +18,7 @@ func registerRoutes(
 	genreStore GenreStore) {
 	mux.HandleFunc("GET /healtz", handleHealtzIndex)
 
-	mux.HandleFunc("GET /api/v1/genres", handleGenreIndex(genreStore))
-	mux.HandleFunc("GET /api/v1/genres/{id}", handleGenreGet(genreStore))
-	mux.HandleFunc("POST /api/v1/genres", handleGenrePost(genreStore))
+	mux.HandleFunc("GET /api/v1/genres", withError(handleGenreIndex(genreStore)))
+	mux.HandleFunc("GET /api/v1/genres/{id}", withError(handleGenreGet(genreStore)))
+	mux.HandleFunc("POST /api/v1/genres", withError(handleGenrePost(genreStore)))
 }

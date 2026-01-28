@@ -1,61 +1,62 @@
 package api
 
 import (
-	"log/slog"
+	"fmt"
 	"net/http"
 )
 
-func handleInternalServerError(w http.ResponseWriter, r *http.Request, err error) {
-	slog.Error("unhandled error", "method", r.Method, "url", r.URL, "err", err)
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(http.StatusInternalServerError)
-
-	_, writeErr := w.Write([]byte(`{"status":500,"message":"internal server error"}`))
-	if writeErr != nil {
-		slog.Error("handleInternalServerError: write response", "method", r.Method, "url", r.URL, "err", writeErr)
-	}
+type HttpStatusError struct {
+	statusCode int
+	message    string
+	errors     []string
 }
 
-func handleNotFound(w http.ResponseWriter, r *http.Request, message string) {
+func NewNotFound(message string) *HttpStatusError {
 	if message == "" {
 		message = "resource not found"
 	}
 
-	statusCode := http.StatusNotFound
-
-	writeJSON(w, r, statusCode, map[string]any{
-		"status":  statusCode,
-		"message": message,
-	}, nil)
-}
-
-func handleConflict(w http.ResponseWriter, r *http.Request, message string) {
-	if message == "" {
-		message = "conflict"
+	return &HttpStatusError{
+		statusCode: http.StatusNotFound,
+		message:    message,
 	}
-
-	statusCode := http.StatusConflict
-
-	writeJSON(w, r, statusCode, map[string]any{
-		"status":  statusCode,
-		"message": message,
-	}, nil)
 }
 
-func handleBadRequest(w http.ResponseWriter, r *http.Request, message string, errors []string) {
+func NewBadRequest(message string, errors []string) *HttpStatusError {
 	if message == "" {
 		message = "bad request"
 	}
 
-	response := map[string]any{
-		"status":  http.StatusBadRequest,
-		"message": message,
+	return &HttpStatusError{
+		statusCode: http.StatusBadRequest,
+		message:    message,
+		errors:     errors,
+	}
+}
+
+func NewConflict(message string) *HttpStatusError {
+	if message == "" {
+		message = "conflict"
 	}
 
-	if len(errors) > 0 {
-		response["errors"] = errors
+	return &HttpStatusError{
+		statusCode: http.StatusConflict,
+		message:    message,
 	}
+}
 
-	writeJSON(w, r, http.StatusBadRequest, response, nil)
+func (e *HttpStatusError) Error() string {
+	return fmt.Sprintf("http %d: %s", e.statusCode, e.message)
+}
+
+func (e *HttpStatusError) StatusCode() int {
+	return e.statusCode
+}
+
+func (e *HttpStatusError) Message() string {
+	return e.message
+}
+
+func (e *HttpStatusError) Errors() []string {
+	return e.errors
 }

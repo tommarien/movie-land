@@ -237,7 +237,6 @@ func TestGetGenre(t *testing.T) {
 			mockStore := &mockGenreStore{
 				getGenreFunc: tt.mockFunc,
 			}
-			mux.HandleFunc("/api/v1/genres/{id}", handleGenreGet(mockStore))
 			registerRoutes(mux, mockStore)
 
 			if tt.IDParam == "" {
