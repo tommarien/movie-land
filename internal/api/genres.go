@@ -58,32 +58,26 @@ func handleGenreIndex(store GenreStore) HandlerFuncWithError {
 
 func handleGenrePost(store GenreStore) HandlerFuncWithError {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		var input struct {
-			Slug string `json:"slug"`
-			Name string `json:"name"`
-		}
+		var payload CreateGenreRequest
 
-		err := readJSON(w, r, &input)
+		err := readJSON(w, r, &payload)
 		if err != nil {
 			return NewBadRequest(err.Error(), nil)
 		}
 
 		v := validator.New()
-		v.Required("slug", input.Slug)
-		v.MaxLength("slug", input.Slug, 40)
-		v.Slug("slug", input.Slug)
-		v.MaxLength("name", input.Name, 40)
+		payload.Validate(v)
 
 		if !v.IsValid() {
 			return NewBadRequest("", v.GetErrors())
 		}
 
 		genre := &datastore.Genre{
-			Slug: input.Slug,
+			Slug: payload.Slug,
 		}
 
-		if input.Name != "" {
-			genre.Name.String = input.Name
+		if payload.Name != "" {
+			genre.Name.String = payload.Name
 			genre.Name.Valid = true
 		}
 
