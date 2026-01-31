@@ -11,7 +11,7 @@ type HttpStatusError struct {
 	errors     []string
 }
 
-func NewNotFound(message string) *HttpStatusError {
+func NewNotFoundStatusError(message string) *HttpStatusError {
 	if message == "" {
 		message = "resource not found"
 	}
@@ -22,7 +22,7 @@ func NewNotFound(message string) *HttpStatusError {
 	}
 }
 
-func NewBadRequest(message string, errors []string) *HttpStatusError {
+func NewBadRequestStatusError(message string, errors []string) *HttpStatusError {
 	if message == "" {
 		message = "bad request"
 	}
@@ -34,7 +34,7 @@ func NewBadRequest(message string, errors []string) *HttpStatusError {
 	}
 }
 
-func NewConflict(message string) *HttpStatusError {
+func NewConflictStatusError(message string) *HttpStatusError {
 	if message == "" {
 		message = "conflict"
 	}
