@@ -37,6 +37,16 @@ migrate-down:
 migrate-down-test:
 	GOOSE_MIGRATION_DIR=$(GOOSE_MIGRATION_DIR) goose postgres "${DATABASE_TEST_URL}" down; \
 
+## docker-up: start docker compose services
+.PHONY: docker-up
+docker-up:
+	docker compose up -d
+
+## docker-down: stop docker compose services
+.PHONY: docker-down
+docker-down:
+	docker compose down
+
 ## build: build the app
 .PHONY: build
 build:

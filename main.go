@@ -20,6 +20,8 @@ func main() {
 }
 
 func run() error {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
 	cfg, err := config.FromEnv()
 	if err != nil {
 		return fmt.Errorf("failed to parse envvars: %w", err)
@@ -38,8 +40,8 @@ func run() error {
 
 	store := datastore.New(pool)
 
-	api := api.New(cfg, store)
-	if err = api.Start(ctx); err != nil {
+	srv := api.New(cfg, store)
+	if err = srv.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start api: %w", err)
 	}
 
